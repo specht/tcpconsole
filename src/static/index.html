@@ -45,9 +45,9 @@
         ws.onopen = function () {
             append_li('ws.onopen');
             ws.send(JSON.stringify({action: 'open', host: 'ferienamwasser.reisen', port: 443}))
-            setInterval(function() {
-                ws.send(JSON.stringify({action: 'poll'}))
-            }, 1000);
+            ws.send(JSON.stringify({action: 'send', message: 'GET /api/sitemap.txt HTTP/1.0'}))
+            ws.send(JSON.stringify({action: 'send', message: 'Host: ferienamwasser.reisen'}))
+            ws.send(JSON.stringify({action: 'send', message: ''}))
         }
         ws.onmessage = function (msg) {
             append_li('<pre>' + msg.data + '</pre>');

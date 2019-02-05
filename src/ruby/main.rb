@@ -23,6 +23,7 @@ class Main < Sinatra::Base
             ws.on(:message) do |msg|
                 client_id = request.env['HTTP_SEC_WEBSOCKET_KEY']
                 request = JSON.parse(msg.data)
+                STDERR.puts request.to_json
                 if request['action'] == 'open'
                     @@clients[client_id] = TCPSocket.new(request['host'], request['port'])
                     if true
@@ -35,6 +36,51 @@ class Main < Sinatra::Base
                         @@clients[client_id].connect
                     end
                     ws.send('OPENED')
+                    Thread.new do 
+#                         while true do
+#                             buffer = nil
+#                             begin
+#                                 buffer = @@clients[client_id].read_nonblock(1024)
+#                             rescue EOFError
+#                                 STDERR.puts "EOFError"
+#                                 break
+#                             rescue OpenSSL::SSL::SSLErrorWaitReadable
+#                                 STDERR.puts "SSLErrorWaitReadable"
+#                                 sleep(1)
+#                             end
+#                             if buffer
+#                                 ws.send(buffer)
+#                             end
+#                             if @@clients[client_id].closed?
+#                                 break
+#                             end
+#                         end
+#                         STDERR.puts "socket closed"
+                        while true do
+                            break if @@clients[client_id].closed? || @@clients[client_id].eof?
+                            STDERR.puts "select >"
+                            s = IO.select([@@clients[client_id]])
+                            STDERR.puts "<"
+                            buffer = nil
+                            begin
+                                buffer = @@clients[client_id].read_nonblock(1024)
+                            rescue EOFError
+                                STDERR.puts "EOFError"
+                                break
+                            rescue OpenSSL::SSL::SSLErrorWaitReadable
+                                STDERR.puts "SSLErrorWaitReadable"
+                                sleep(1)
+                            end
+                            if buffer
+                                STDERR.puts "Received #{buffer.size} bytes."
+                                ws.send(buffer)
+                            end
+                            if @@clients[client_id].closed?
+                                break
+                            end
+                        end
+                        STDERR.puts "socket closed"
+                    end
                 elsif request['action'] == 'send'
                     if @@clients[client_id]
                         @@clients[client_id].write(request['message'].strip)
