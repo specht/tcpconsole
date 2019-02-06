@@ -29,7 +29,7 @@ class Main < Sinatra::Base
                     @@clients[client_id].set_encoding('UTF-8')
                     if request['tls']
                         ssl_context = OpenSSL::SSL::SSLContext.new()
-                        ssl_context.ssl_version = :SSLv23
+#                         ssl_context.ssl_version = :SSLv23
                         @@clients[client_id] = OpenSSL::SSL::SSLSocket.new(@@clients[client_id], ssl_context)
                         @@clients[client_id].sync_close = true
                         @@clients[client_id].connect
@@ -47,7 +47,7 @@ class Main < Sinatra::Base
 #                             rescue OpenSSL::SSL::SSLErrorWaitReadable
 #                                 STDERR.puts "SSLErrorWaitReadable"
 #                                 sleep(1)
-#                             end
+#                             end 
 #                             if buffer
 #                                 ws.send(buffer)
 #                             end
@@ -61,24 +61,28 @@ class Main < Sinatra::Base
                             STDERR.puts "select >"
                             s = IO.select([@@clients[client_id]])
                             STDERR.puts "<"
-                            buffer = nil
-                            begin
-                                buffer = @@clients[client_id].read_nonblock(1024)
-                                buffer.force_encoding('UTF-8')
-                            rescue EOFError
-                                STDERR.puts "EOFError"
-                                break
-                            rescue OpenSSL::SSL::SSLErrorWaitReadable
-                                STDERR.puts "SSLErrorWaitReadable"
-                                sleep(1)
+                            while true do
+                                buffer = nil
+                                begin
+                                    buffer = @@clients[client_id].read_nonblock(4096)
+                                    buffer.force_encoding('UTF-8')
+                                rescue EOFError
+                                    STDERR.puts "EOFError"
+                                    break
+                                rescue OpenSSL::SSL::SSLErrorWaitReadable
+                                    STDERR.puts "SSLErrorWaitReadable"
+                                    break
+                                rescue IO::EAGAINWaitReadable
+                                    STDERR.puts "EAGAINWaitReadable"
+                                    break
+                                end
+                                if buffer
+                                    STDERR.puts "Received #{buffer.size} bytes."
+                                    ws.send(buffer)
+                                end
+                                break if @@clients[client_id].closed?
                             end
-                            if buffer
-                                STDERR.puts "Received #{buffer.size} bytes."
-                                ws.send(buffer)
-                            end
-                            if @@clients[client_id].closed?
-                                break
-                            end
+                            break if @@clients[client_id].closed?
                         end
                         STDERR.puts "socket closed"
                     end
@@ -111,7 +115,7 @@ class Main < Sinatra::Base
     end
     
     post '/api' do
-        {:hello => 'world'}.to_json
+        {:hello => 'world', :clients => @@clients.keys}.to_json
     end
     
     get '/boo' do
