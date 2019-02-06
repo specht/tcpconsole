@@ -2,6 +2,11 @@
 <head>
 <title>TCP Console</title>
 <style type='text/css'>
+body {
+    margin-top: 64px;
+    font-family: mono;
+    font-size: 10pt;
+}
 #messages, #input, input, button { 
     font-family: mono;
     white-space: pre;
@@ -12,65 +17,193 @@
     padding: 8px;
     margin: 8px 0;
 }
+
+button {
+    cursor: pointer;
+}
+
 #input { 
     background-color: #c3def1;
     border: 1px solid #729fcf;
 }
+input {
+    background-color: #fff;
+}
+.head {
+    background-color: #eee;
+    border-bottom: 1px solid #bbb;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 4px 16px;
+    box-shadow: rgba(0,0,0,0.2) 0px 1px 10px;
+}
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 25px;
+  top: -8px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .2s;
+  transition: .2s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 21px;
+  width: 21px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  -webkit-transition: .2s;
+  transition: .2s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 2px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(21px);
+  -ms-transform: translateX(21px);
+  transform: translateX(21px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 100px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+span.rule {
+    display: inline-block;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #fff;
+    width: 0px;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: -20px;
+    margin-bottom: -24px;
+    height: 60px;
+    position: relative;
+    top: 0px;
+}
+
 </style>
 </head>
 
 <body>
-    <div class='container-fluid'>
-        <div class='row'>
-            <div class='col-sm-8'>
-                <input type="text" id="host" placeholder='Host' style='width: 100%;'/>
-            </div>
-            <div class='col-sm-2'>
-                <input type="text" id="port" placeholder='Port' style='width: 100%;' />
-            </div>
-            <div class='col-sm-1'>
-                <button class='btn btn-sm btn-primary'>Connect</button>
-            </div>
-        </div>
-        <div class='row'>
-            <div class='col-sm-12'>
-                <input type="text" id="input" style='width: 100%;'/>
-            </div>
-        </div>
-        <div class='row'>
-            <div class='col-sm-12'>
-                <div id="messages"></div>
-            </div>
-        </div>
+    <div class='head'>
+        TCP Console
+        <span class='rule'></span>
+        <input type='text' id='host' placeholder='Host' size='24' />
+        <input type='text' id='port' placeholder='Port' size='5' />
+        <span class='rule'></span>
+        <label class="switch">
+            <input type="checkbox" id='tls'>
+            <span class="slider round"></span>
+        </label>
+        TLS
+        <span class='rule'></span>
+        <button id='connect'>Connect</button>
+        <span class='rule'></span>
+        No connection.
     </div>
+    <div>
+        <input type="text" id="input" style='width: 100%;'/>
+    </div>
+<!--     <div id="messages"></div> -->
 
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script type="text/javascript">
+        function setup_ws(ws)
+        {
+            ws.onopen = function () {
+                console.log('websocket opened!');
+    //             append_li('ws.onopen');
+    //             ws.send(JSON.stringify({action: 'open', host: 'nhcham.org', port: 443, tls: true}))
+    //             ws.send(JSON.stringify({action: 'send', message: 'GET / HTTP/1.0'}))
+    //             ws.send(JSON.stringify({action: 'send', message: 'Host: nhcham.org'}))
+    //             ws.send(JSON.stringify({action: 'send', message: ''}))
+            }
+            ws.onmessage = function (msg) {
+                data = JSON.parse(msg.data);
+                console.log(data);
+                if (data.connected === true)
+                {
+                    $('#connect').html('Disconnect');
+                    $('#host').prop('disabled', true);
+                    $('#port').prop('disabled', true);
+                    $('#tls').prop('disabled', true);
+                }
+                else if (data.connected === false)
+                {
+                    $('#connect').html('Connected');
+                    $('#host').prop('disabled', false);
+                    $('#port').prop('disabled', false);
+                    $('#tls').prop('disabled', false);
+                }
+    //             append_li(msg.data);
+            }
+            ws.onclose = function () {
+                console.log('websocket closed, recreating connection!');
+                ws = new WebSocket(ws_uri);
+                setup_ws(ws);
+                //             append_li('ws.onclose');
+            }
+        }
+        
         var append_li = function (str) {
             $('#messages').text($('#messages').text() + str);
         }
         var ws_uri = 'ws://localhost:8020/ws';
         console.log(ws_uri);
         var ws = new WebSocket(ws_uri);
-        ws.onopen = function () {
-//             append_li('ws.onopen');
-            ws.send(JSON.stringify({action: 'open', host: 'nhcham.org', port: 80, tls: false}))
-            ws.send(JSON.stringify({action: 'send', message: 'GET / HTTP/1.0'}))
-            ws.send(JSON.stringify({action: 'send', message: 'Host: nhcham.org'}))
-            ws.send(JSON.stringify({action: 'send', message: ''}))
-        }
-        ws.onmessage = function (msg) {
-            append_li(msg.data);
-        }
-        ws.onclose = function () {
-//             append_li('ws.onclose');
-        }
+        setup_ws(ws);
         var input = $('#input')
         input.change(function () {
             var msg = input.val();
-            ws.send(JSON.stringify({action: 'send', message: msg}))
-//             append_li('"' + msg + '" to server');
+            $('<div>').text(msg).insertBefore(input);
+//             ws.send(JSON.stringify({action: 'send', message: msg}))
             input.val("");
+        });
+        input.focus();
+        $('#connect').click(function() {
+            ws.send(JSON.stringify({
+                action: 'open', 
+                host: $('#host').val(), 
+                port: parseInt($('#port').val()), 
+                tls: $('#tls').prop('checked')
+            }));
         });
     </script>
 </body>
