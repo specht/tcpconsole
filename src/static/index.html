@@ -1,7 +1,13 @@
 <html>
 <head>
-    <title>TCP Console</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<title>TCP Console</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<style type='text/css'>
+#messages { 
+    font-family: mono;
+    white-space: pre;
+}
+</style>
 </head>
 
 <body>
@@ -30,36 +36,36 @@
             </div>
         </div>
     </div>
-    <ul id="messages"></ul>
+    <div id="messages"></div>
 
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <script type="text/javascript">
         var append_li = function (str) {
-            $('#messages').append($('<li>').html(str));
+            $('#messages').text($('#messages').text() + str);
         }
         var ws_uri = 'ws://localhost:8020/ws';
         console.log(ws_uri);
         var ws = new WebSocket(ws_uri);
         ws.onopen = function () {
-            append_li('ws.onopen');
-            ws.send(JSON.stringify({action: 'open', host: 'ferienamwasser.reisen', port: 443}))
-            ws.send(JSON.stringify({action: 'send', message: 'GET /api/sitemap.txt HTTP/1.0'}))
+//             append_li('ws.onopen');
+            ws.send(JSON.stringify({action: 'open', host: 'ferienamwasser.reisen', port: 443, tls: true}))
+            ws.send(JSON.stringify({action: 'send', message: 'GET / HTTP/1.0'}))
             ws.send(JSON.stringify({action: 'send', message: 'Host: ferienamwasser.reisen'}))
             ws.send(JSON.stringify({action: 'send', message: ''}))
         }
         ws.onmessage = function (msg) {
-            append_li('<pre>' + msg.data + '</pre>');
+            append_li(msg.data);
         }
         ws.onclose = function () {
-            append_li('ws.onclose');
+//             append_li('ws.onclose');
         }
         var input = $('#input')
         input.change(function () {
             var msg = input.val();
             ws.send(JSON.stringify({action: 'send', message: msg}))
-            append_li('"' + msg + '" to server');
+//             append_li('"' + msg + '" to server');
             input.val("");
         });
     </script>

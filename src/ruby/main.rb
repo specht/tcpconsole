@@ -26,16 +26,16 @@ class Main < Sinatra::Base
                 STDERR.puts request.to_json
                 if request['action'] == 'open'
                     @@clients[client_id] = TCPSocket.new(request['host'], request['port'])
-                    if true
+                    @@clients[client_id].set_encoding('UTF-8')
+                    if request['tls']
                         ssl_context = OpenSSL::SSL::SSLContext.new()
-#                         ssl_context.cert = OpenSSL::X509::Certificate.new(File.open("certificate.crt"))
-#                         ssl_context.key = OpenSSL::PKey::RSA.new(File.open("certificate.key"))
                         ssl_context.ssl_version = :SSLv23
                         @@clients[client_id] = OpenSSL::SSL::SSLSocket.new(@@clients[client_id], ssl_context)
                         @@clients[client_id].sync_close = true
                         @@clients[client_id].connect
+                        @@clients[client_id].io.set_encoding('UTF-8')
                     end
-                    ws.send('OPENED')
+#                     ws.send('OPENED')
                     Thread.new do 
 #                         while true do
 #                             buffer = nil
@@ -64,6 +64,7 @@ class Main < Sinatra::Base
                             buffer = nil
                             begin
                                 buffer = @@clients[client_id].read_nonblock(1024)
+                                buffer.force_encoding('UTF-8')
                             rescue EOFError
                                 STDERR.puts "EOFError"
                                 break
