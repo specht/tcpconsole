@@ -82,18 +82,12 @@ class Main < Sinatra::Base
                         @@clients[client_id].write(request['message'].strip)
                         @@clients[client_id].write("\r\n")
                     end
-                elsif request['action'] == 'poll'
+                elsif request['action'] == 'close'
                     begin
-                        buffer = @@clients[client_id].read_nonblock(1024)
-                        ws.send(buffer)
-                    rescue IO::EAGAINWaitReadable
-                    rescue OpenSSL::SSL::SSLErrorWaitReadable
-                    rescue EOFError
-                        if @@clients[client_id]
-                            @@clients.delete(client_id)
-                        end
-                        ws.send('CLOSE')
+                        @@clients[client_id].close
+                    rescue
                     end
+                    ws.send({:connected => false}.to_json)
                 end
             end
 

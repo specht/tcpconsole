@@ -29,6 +29,7 @@ button {
 input {
     background-color: #fff;
 }
+
 .head {
     background-color: #eee;
     border-bottom: 1px solid #bbb;
@@ -38,6 +39,19 @@ input {
     width: 100%;
     padding: 4px 16px;
     box-shadow: rgba(0,0,0,0.2) 0px 1px 10px;
+}
+
+.error {
+    background-color: #fe9;
+    color: #800;
+    border-bottom: 1px solid #a94;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    padding: 8px 16px;
+    box-shadow: rgba(0,0,0,0.2) 0px 1px 10px;
+    display: none;
 }
 
 /* The switch - the box around the slider */
@@ -118,10 +132,16 @@ span.rule {
     top: 0px;
 }
 
+.green {
+    color: #093;
+}
+
 </style>
 </head>
 
 <body>
+    <div class='error'>
+    </div>
     <div class='head'>
         TCP Console
         <span class='rule'></span>
@@ -136,15 +156,19 @@ span.rule {
         <span class='rule'></span>
         <button id='connect'>Connect</button>
         <span class='rule'></span>
-        No connection.
+        <span id='status'>Disconnected</span>
     </div>
     <div>
         <input type="text" id="input" style='width: 100%;'/>
     </div>
 <!--     <div id="messages"></div> -->
 
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script type="text/javascript">
+    <script
+    src="https://code.jquery.com/jquery-3.3.1.min.js"
+    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+    crossorigin="anonymous"></script>
+  <script type="text/javascript">
+        var connected = false;
         function setup_ws(ws)
         {
             ws.onopen = function () {
@@ -164,13 +188,24 @@ span.rule {
                     $('#host').prop('disabled', true);
                     $('#port').prop('disabled', true);
                     $('#tls').prop('disabled', true);
+                    $('#status').html('Connected');
+                    $('#status').addClass('green');
+                    connected = true;
                 }
                 else if (data.connected === false)
                 {
-                    $('#connect').html('Connected');
+                    $('#connect').html('Connect');
                     $('#host').prop('disabled', false);
                     $('#port').prop('disabled', false);
                     $('#tls').prop('disabled', false);
+                    $('#status').html('Disconnected');
+                    $('#status').removeClass('green');
+                    connected = false;
+                }
+                else if (typeof(data.error) !== 'undefined')
+                {
+                    $('.error').html(data.error);
+                    $('.error').slideDown(400).delay(2000).slideUp();
                 }
     //             append_li(msg.data);
             }
@@ -198,12 +233,17 @@ span.rule {
         });
         input.focus();
         $('#connect').click(function() {
-            ws.send(JSON.stringify({
-                action: 'open', 
-                host: $('#host').val(), 
-                port: parseInt($('#port').val()), 
-                tls: $('#tls').prop('checked')
-            }));
+            if (!connected)
+                ws.send(JSON.stringify({
+                    action: 'open', 
+                    host: $('#host').val(), 
+                    port: parseInt($('#port').val()), 
+                    tls: $('#tls').prop('checked')
+                }))
+            else
+                ws.send(JSON.stringify({
+                    action: 'close'
+                }));
         });
     </script>
 </body>
