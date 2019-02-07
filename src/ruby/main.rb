@@ -43,7 +43,8 @@ class Main < Sinatra::Base
                         ws.send({:error => e.to_s}.to_json)
                     end
                     if @@clients[client_id]
-                        ws.send({:connected => true}.to_json)
+                        ws.send({:connected => true, :host => request['host'], :port => request['port'], :address => @@clients[client_id].peeraddr(:numeric)[3]}.to_json)
+                        STDERR.puts @@clients[client_id].inspect
                         Thread.new do 
                             while true do
                                 break if @@clients[client_id].closed? || @@clients[client_id].eof?
@@ -54,7 +55,9 @@ class Main < Sinatra::Base
                                     buffer = nil
                                     begin
                                         buffer = @@clients[client_id].read_nonblock(4096)
-                                        buffer.force_encoding('UTF-8')
+                                        buffer.force_encoding(Encoding::UTF_8)
+                                        buffer.encode!(Encoding::UTF_16LE, invalid: :replace, replace: "\uFFFD")
+                                        buffer.encode!(Encoding::UTF_8)
                                     rescue EOFError
                                         STDERR.puts "EOFError"
                                         break
@@ -67,7 +70,7 @@ class Main < Sinatra::Base
                                     end
                                     if buffer
                                         STDERR.puts "Received #{buffer.size} bytes."
-                                        ws.send(buffer)
+                                        ws.send({:message => buffer}.to_json)
                                     end
                                     break if @@clients[client_id].closed?
                                 end

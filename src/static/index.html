@@ -1,16 +1,19 @@
 <html>
 <head>
 <title>TCP Console</title>
+<link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+
 <style type='text/css'>
 body {
-    margin-top: 64px;
-    font-family: mono;
-    font-size: 10pt;
+    margin-top: 72px;
+    margin-bottom: 72px;
+    font-size: 12pt;
+    font-family: 'Inconsolata', monospace;
 }
-#messages, #input, input, button { 
-    font-family: mono;
+input, button { 
+    font-family: 'Inconsolata', monospace;
     white-space: pre;
-    font-size: 10pt;
+    font-size: 12pt;
     background-color: #f0f0f0;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -22,10 +25,6 @@ button {
     cursor: pointer;
 }
 
-#input { 
-    background-color: #c3def1;
-    border: 1px solid #729fcf;
-}
 input {
     background-color: #fff;
 }
@@ -36,9 +35,24 @@ input {
     position: fixed;
     top: 0;
     left: 0;
+    right: 0;
+    width: 100%;
+    padding: 4px 0px;
+    box-shadow: rgba(0,0,0,0.2) 0px 1px 10px;
+}
+
+.foot {
+    background-color: #eee;
+    border-top: 1px solid #bbb;
+    position: fixed;
+    bottom: 0;
+    left: 0;
     width: 100%;
     padding: 4px 16px;
-    box-shadow: rgba(0,0,0,0.2) 0px 1px 10px;
+    box-shadow: rgba(0,0,0,0.2) 0px -1px 10px;
+/*     height: 48px; */
+/*     padding-top: 20px; */
+/*     padding-bottom: 16px; */
 }
 
 .error {
@@ -133,51 +147,150 @@ span.rule {
 }
 
 .green {
-    color: #093;
+    color: #4e9a06;
+}
+
+.red {
+    color: #cc0000;
+}
+
+.message {
+    font-family: 'Inconsolata', monospace;
+    white-space: pre-wrap;
+    font-size: 12pt;
+/*     background-color: #f0f0f0; */
+    border: 1px solid #ddd;
+    padding: 8px;
+    border-radius: 8px;
+/*     padding: 8px; */
+    margin: 8px 20px;
+    position: relative;
+}
+
+.server {
+    background-color: #4e9a06;
+    border: 1px solid #3a7304;
+    color: #fff;
+}
+
+.client {
+    background-color: #f8f8f8;
+    border: 1px solid #d0d0d0;
+    color: #000;
+}
+
+.note {
+    background-color: #fdf3a7;
+    border: 1px dotted #edd400;
+    color: #625000;
+}
+
+.client .tick {
+    width: 12px;
+    height: 16px;
+    position: absolute;
+    top: 10px;
+    left: -12px;
+    background-image: url('tick-client.png');
+}
+
+.server .tick {
+    width: 12px;
+    height: 16px;
+    position: absolute;
+    top: 9px;
+    right: -12px;
+    background-image: url('tick-server.png');
 }
 
 </style>
 </head>
 
 <body>
+    <div id='messages'>
+    </div>
     <div class='error'>
     </div>
     <div class='head'>
-        TCP Console
-        <span class='rule'></span>
-        <input type='text' id='host' placeholder='Host' size='24' />
-        <input type='text' id='port' placeholder='Port' size='5' />
-        <span class='rule'></span>
-        <label class="switch">
-            <input type="checkbox" id='tls'>
-            <span class="slider round"></span>
-        </label>
-        TLS
-        <span class='rule'></span>
-        <button id='connect'>Connect</button>
-        <span class='rule'></span>
-        <span id='status'>Disconnected</span>
+        <div style='text-align: center;'>
+            <span class='rule'></span>
+            TCP Console:
+            <span id='ws_status' class='red'>Waiting</span>
+            <span class='rule'></span>
+            <input type='text' id='host' placeholder='Host' size='24' />
+            <input type='text' id='port' placeholder='Port' size='5' />
+            <span class='rule'></span>
+            <label class="switch">
+                <input type="checkbox" id='tls'>
+                <span class="slider round"></span>
+            </label>
+            TLS
+            <span class='rule'></span>
+            <button id='connect'>Connect</button>
+            <span class='rule'></span>
+            <span id='status' class='red'>Disconnected</span>
+            <span class='rule'></span>
+        </div>
     </div>
-    <div>
-        <input type="text" id="input" style='width: 100%;'/>
+    <div class='foot'>
+        <input id='input' type='text' style='width: calc(100% - 210px);' disabled />
+        <button id='send' style='width: 80px;' disabled>Send</button>
+        <button id='clear' style='width: 80px;'>Clear</button>
     </div>
-<!--     <div id="messages"></div> -->
-
+    
     <script
     src="https://code.jquery.com/jquery-3.3.1.min.js"
     integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
     crossorigin="anonymous"></script>
   <script type="text/javascript">
         var connected = false;
+        function append(which, msg)
+        {
+            var messages = $('#messages');
+            var div = messages.children().last();
+            if ((which === 'note') || (!div.hasClass(which)))
+            {
+                div = $('<div>').addClass('message ' + which);
+                messages.append(div);
+                if (which !== 'note')
+                    $('<div>').addClass('tick').appendTo(div);
+            }
+            div.append(document.createTextNode(msg));
+            if (which !== 'server')
+                div.append("<br />");
+            $("html, body").stop().animate({ scrollTop: $(document).height() }, 400);
+        }
+        
+        function append_client(msg)
+        {
+            append('client', msg);
+        }
+        
+        function append_server(msg)
+        {
+            append('server', msg);
+        }
+        
+        function append_note(msg)
+        {
+            append('note', msg);
+        }
+        
         function setup_ws(ws)
         {
             ws.onopen = function () {
                 console.log('websocket opened!');
-    //             append_li('ws.onopen');
+                $('#ws_status').html('Ready').addClass('green').removeClass('red');
     //             ws.send(JSON.stringify({action: 'open', host: 'nhcham.org', port: 443, tls: true}))
     //             ws.send(JSON.stringify({action: 'send', message: 'GET / HTTP/1.0'}))
     //             ws.send(JSON.stringify({action: 'send', message: 'Host: nhcham.org'}))
     //             ws.send(JSON.stringify({action: 'send', message: ''}))
+            }
+            ws.onclose = function () {
+                console.log('websocket closed, recreating connection!');
+                $('#ws_status').html('Error').addClass('red').removeClass('green');
+//                 ws = new WebSocket(ws_uri);
+//                 setup_ws(ws);
             }
             ws.onmessage = function (msg) {
                 data = JSON.parse(msg.data);
@@ -189,8 +302,13 @@ span.rule {
                     $('#port').prop('disabled', true);
                     $('#tls').prop('disabled', true);
                     $('#status').html('Connected');
-                    $('#status').addClass('green');
+                    $('#status').addClass('green').removeClass('red');
+                    $('#input').prop('disabled', false);
+                    $('#send').prop('disabled', false);
                     connected = true;
+                    $('#input').val("");
+                    $('#input').focus();
+                    append_note('Connected to ' + data.host + ' (' + data.address + ') on port ' + data.port + '.');
                 }
                 else if (data.connected === false)
                 {
@@ -199,39 +317,54 @@ span.rule {
                     $('#port').prop('disabled', false);
                     $('#tls').prop('disabled', false);
                     $('#status').html('Disconnected');
-                    $('#status').removeClass('green');
+                    $('#status').removeClass('green').addClass('red');
+                    $('#input').prop('disabled', true);
+                    $('#send').prop('disabled', true);
                     connected = false;
+                    append_note('Disconnected from host.');
                 }
                 else if (typeof(data.error) !== 'undefined')
                 {
                     $('.error').html(data.error);
                     $('.error').slideDown(400).delay(2000).slideUp();
                 }
-    //             append_li(msg.data);
-            }
-            ws.onclose = function () {
-                console.log('websocket closed, recreating connection!');
-                ws = new WebSocket(ws_uri);
-                setup_ws(ws);
-                //             append_li('ws.onclose');
+                else if (typeof(data.message) !== 'undefined')
+                {
+                    append_server(data.message);
+                }
             }
         }
         
-        var append_li = function (str) {
-            $('#messages').text($('#messages').text() + str);
-        }
         var ws_uri = 'ws://localhost:8020/ws';
         console.log(ws_uri);
         var ws = new WebSocket(ws_uri);
         setup_ws(ws);
         var input = $('#input')
-        input.change(function () {
+        
+        function sendInput()
+        {
             var msg = input.val();
-            $('<div>').text(msg).insertBefore(input);
-//             ws.send(JSON.stringify({action: 'send', message: msg}))
+            append_client(msg);
+            ws.send(JSON.stringify({action: 'send', message: msg}))
             input.val("");
+        }
+        
+        input.keydown(function (e) {
+            if (e.originalEvent.keyCode == 13)
+            {
+                e.preventDefault();
+                sendInput();
+            }
         });
-        input.focus();
+        
+        $('#send').click(function(e) {
+            sendInput();
+            input.focus();
+        });
+        $('#clear').click(function(e) {
+            $('#messages').empty();
+        });
+        $('#host').focus();
         $('#connect').click(function() {
             if (!connected)
                 ws.send(JSON.stringify({
