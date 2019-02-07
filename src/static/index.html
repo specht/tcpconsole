@@ -55,19 +55,6 @@ input {
 /*     padding-bottom: 16px; */
 }
 
-.error {
-    background-color: #fe9;
-    color: #800;
-    border-bottom: 1px solid #a94;
-    position: fixed;
-    top: 60px;
-    left: 0;
-    width: 100%;
-    padding: 8px 16px;
-    box-shadow: rgba(0,0,0,0.2) 0px 1px 10px;
-    display: none;
-}
-
 /* The switch - the box around the slider */
 .switch {
   position: relative;
@@ -185,6 +172,12 @@ span.rule {
     color: #625000;
 }
 
+.error {
+    background-color: #f4951b;
+    border: 1px dotted #992413;
+    color: #a40000;
+}
+
 .client .tick {
     width: 12px;
     height: 16px;
@@ -203,19 +196,41 @@ span.rule {
     background-image: url('tick-server.png');
 }
 
+.timestamp {
+    float: right;
+    font-size: 80%;
+}
+
+@media print {
+    .head, .foot, .tick {
+        display: none;
+    }
+    .message {
+        background-color: #fff;
+        color: #000;
+        border: unset;
+        border-radius: 0;
+    }
+    .client {
+        border-left: 1px solid #888;
+        background-color: #eee;
+    }
+    .server {
+        border-right: 1px solid #888;
+        background-color: #eee;
+    }
+}
 </style>
 </head>
 
 <body>
     <div id='messages'>
     </div>
-    <div class='error'>
-    </div>
     <div class='head'>
         <div style='text-align: center;'>
             <span class='rule'></span>
-            TCP Console:
-            <span id='ws_status' class='red'>Waiting</span>
+            TCP Console
+<!--             <span id='ws_status' class='red'>Waiting</span> -->
             <span class='rule'></span>
             <input type='text' id='host' placeholder='Host' size='24' />
             <input type='text' id='port' placeholder='Port' size='5' />
@@ -227,8 +242,6 @@ span.rule {
             TLS
             <span class='rule'></span>
             <button id='connect'>Connect</button>
-            <span class='rule'></span>
-            <span id='status' class='red'>Disconnected</span>
             <span class='rule'></span>
         </div>
     </div>
@@ -248,11 +261,16 @@ span.rule {
         {
             var messages = $('#messages');
             var div = messages.children().last();
-            if ((which === 'note') || (!div.hasClass(which)))
+            if ((which === 'note') || (which === 'error') || (!div.hasClass(which)))
             {
                 div = $('<div>').addClass('message ' + which);
                 messages.append(div);
-                if (which !== 'note')
+                d = new Date();
+                timestamp = ('0' + d.getHours()).slice(-2) + ':' +
+                            ('0' + d.getMinutes()).slice(-2) + ':' +
+                            ('0' + d.getSeconds()).slice(-2);
+                $('<div>').addClass('timestamp').html(timestamp).appendTo(div);
+                if (which === 'server' || which == 'client')
                     $('<div>').addClass('tick').appendTo(div);
             }
             div.append(document.createTextNode(msg));
@@ -276,19 +294,31 @@ span.rule {
             append('note', msg);
         }
         
+        function append_error(msg)
+        {
+            append('error', msg);
+        }
+        
+        function keepAlive() { 
+            var timeout = 20000;  
+            if (ws.readyState == ws.OPEN) {  
+                ws.send('');  
+            }  
+            timerId = setTimeout(keepAlive, timeout);  
+        }                  
+        
         function setup_ws(ws)
         {
             ws.onopen = function () {
-                console.log('websocket opened!');
-                $('#ws_status').html('Ready').addClass('green').removeClass('red');
+                keepAlive();
+//                 $('#ws_status').html('Ready').addClass('green').removeClass('red');
     //             ws.send(JSON.stringify({action: 'open', host: 'nhcham.org', port: 443, tls: true}))
     //             ws.send(JSON.stringify({action: 'send', message: 'GET / HTTP/1.0'}))
     //             ws.send(JSON.stringify({action: 'send', message: 'Host: nhcham.org'}))
     //             ws.send(JSON.stringify({action: 'send', message: ''}))
             }
             ws.onclose = function () {
-                console.log('websocket closed, recreating connection!');
-                $('#ws_status').html('Error').addClass('red').removeClass('green');
+//                 $('#ws_status').html('Error').addClass('red').removeClass('green');
 //                 ws = new WebSocket(ws_uri);
 //                 setup_ws(ws);
             }
@@ -301,14 +331,12 @@ span.rule {
                     $('#host').prop('disabled', true);
                     $('#port').prop('disabled', true);
                     $('#tls').prop('disabled', true);
-                    $('#status').html('Connected');
-                    $('#status').addClass('green').removeClass('red');
                     $('#input').prop('disabled', false);
                     $('#send').prop('disabled', false);
                     connected = true;
                     $('#input').val("");
                     $('#input').focus();
-                    append_note('Connected to ' + data.host + ' (' + data.address + ') on port ' + data.port + '.');
+                    append_note('Connected to ' + data.host + ' ' + (data.tls ? '(TLS) ' : '') + '(' + data.address + ') on port ' + data.port + '.');
                 }
                 else if (data.connected === false)
                 {
@@ -316,17 +344,14 @@ span.rule {
                     $('#host').prop('disabled', false);
                     $('#port').prop('disabled', false);
                     $('#tls').prop('disabled', false);
-                    $('#status').html('Disconnected');
-                    $('#status').removeClass('green').addClass('red');
                     $('#input').prop('disabled', true);
                     $('#send').prop('disabled', true);
                     connected = false;
                     append_note('Disconnected from host.');
                 }
-                else if (typeof(data.error) !== 'undefined')
+                else if (typeof(data.connection_error) !== 'undefined')
                 {
-                    $('.error').html(data.error);
-                    $('.error').slideDown(400).delay(2000).slideUp();
+                    append_error('Failed connection attempt to ' + data.host + ' ' + (data.tls ? '(TLS) ' : '') + 'on port ' + data.port + ' (' + data.connection_error + ')');
                 }
                 else if (typeof(data.message) !== 'undefined')
                 {
