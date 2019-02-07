@@ -25,8 +25,11 @@ class Main < Sinatra::Base
             ws.on(:message) do |msg|
                 client_id = request.env['HTTP_SEC_WEBSOCKET_KEY']
                 begin
-                    request = JSON.parse(msg.data)
-                    STDERR.puts request.to_json
+                    request = {}
+                    unless msg.data.empty?
+                        request = JSON.parse(msg.data)
+                        STDERR.puts request.to_json
+                    end
                     if request['action'] == 'open'
                         begin
                             @@clients[client_id] = TCPSocket.new(request['host'], request['port'])
@@ -93,8 +96,8 @@ class Main < Sinatra::Base
                         end
                         ws.send({:connected => false}.to_json)
                     end
-                rescue
-                    STDERR.puts "um..."
+                rescue StandardError => e
+                    STDERR.puts e
                 end
             end
 
