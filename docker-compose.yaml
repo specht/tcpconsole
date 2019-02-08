@@ -1,0 +1,33 @@
+---
+version: '3'
+services:
+  nginx:
+    build: "./docker/nginx"
+    volumes:
+    - "./src/static:/usr/share/nginx/html:ro"
+    - "./data/raw:/raw:ro"
+    - "./logs:/var/log/nginx"
+    links:
+    - ruby:tcpconsoledev_ruby_1
+    depends_on:
+    - ruby
+    network_mode: default
+    ports:
+    - 127.0.0.1:8020:80
+    #environment:
+    #- 'VIRTUAL_HOST=',
+    #- 'LETSENCRYPT_HOST=',
+    #- 'LETSENCRYPT_EMAIL='
+    #expose: 80
+  ruby:
+    build: "./docker/ruby"
+    volumes:
+    - "./src/ruby:/app:ro"
+    - "./src/static:/static:ro"
+    - "./data/raw:/raw"
+    environment:
+    - DEVELOPMENT=1
+    working_dir: "/app"
+    entrypoint: rerun -b --dir /app -s SIGKILL 'rackup --host 0.0.0.0'
+    #entrypoint: rackup --host 0.0.0.0
+    network_mode: default
