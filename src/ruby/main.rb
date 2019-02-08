@@ -52,9 +52,7 @@ class Main < Sinatra::Base
                             Thread.new do 
                                 while true do
                                     break if @@clients[client_id].closed? || @@clients[client_id].eof?
-                                    STDERR.puts "select >"
                                     s = IO.select([@@clients[client_id]])
-                                    STDERR.puts "<"
                                     while true do
                                         buffer = nil
                                         begin
@@ -62,14 +60,8 @@ class Main < Sinatra::Base
                                             buffer.force_encoding(Encoding::UTF_8)
                                             buffer.encode!(Encoding::UTF_16LE, invalid: :replace, replace: "\uFFFD")
                                             buffer.encode!(Encoding::UTF_8)
-                                        rescue EOFError
-                                            STDERR.puts "EOFError"
-                                            break
-                                        rescue OpenSSL::SSL::SSLErrorWaitReadable
-                                            STDERR.puts "SSLErrorWaitReadable"
-                                            break
-                                        rescue IO::EAGAINWaitReadable
-                                            STDERR.puts "EAGAINWaitReadable"
+                                        rescue StandardError => e
+                                            STDERR.puts e
                                             break
                                         end
                                         if buffer
