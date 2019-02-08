@@ -3,7 +3,7 @@ var ws = null;
 var input = null;
 var message_queue = [];
 
-function append_temp(which, msg)
+function append(which, msg)
 {
     var messages = $('#messages');
     var div = messages.children().last();
@@ -19,22 +19,22 @@ function append_temp(which, msg)
         if (which === 'server' || which == 'client')
             $('<div>').addClass('tick').appendTo(div);
     }
-    if (which === 'server')
-    {
-        function timer() {
-            $("html, body").stop().animate({ scrollTop: $(document).height() }, 0);
-            if (window.message_to_append.length > 0)
-            {
-                div.append(document.createTextNode(window.message_to_append.charAt(0)));
-                window.message_to_append = window.message_to_append.substr(1, window.message_to_append.length - 1);
-            }
-            else
-                clearInterval(window.interval);
-        }
-        window.message_to_append = msg;
-        window.interval = setInterval(timer, 10);
-    }
-    else
+//     if (which === 'server')
+//     {
+//         function timer() {
+//             $("html, body").stop().animate({ scrollTop: $(document).height() }, 0);
+//             if (window.message_to_append.length > 0)
+//             {
+//                 div.append(document.createTextNode(window.message_to_append.charAt(0)));
+//                 window.message_to_append = window.message_to_append.substr(1, window.message_to_append.length - 1);
+//             }
+//             else
+//                 clearInterval(window.interval);
+//         }
+//         window.message_to_append = msg;
+//         window.interval = setInterval(timer, 10);
+//     }
+//     else
     {
         div.append(document.createTextNode(msg));
     }
@@ -44,14 +44,14 @@ function append_temp(which, msg)
     $("html, body").stop().animate({ scrollTop: $(document).height() }, 400);
 }
 
-function append(which, msg)
-{
-    var d = new Date();
-    var timestamp = ('0' + d.getHours()).slice(-2) + ':' +
-                    ('0' + d.getMinutes()).slice(-2) + ':' +
-                    ('0' + d.getSeconds()).slice(-2);
-    message_queue.push({which: which, timestamp: timestamp, msg: msg});
-}
+// function append(which, msg)
+// {
+//     var d = new Date();
+//     var timestamp = ('0' + d.getHours()).slice(-2) + ':' +
+//                     ('0' + d.getMinutes()).slice(-2) + ':' +
+//                     ('0' + d.getSeconds()).slice(-2);
+//     message_queue.push({which: which, timestamp: timestamp, msg: msg});
+// }
 
 function append_client(msg)
 {
