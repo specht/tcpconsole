@@ -1,0 +1,216 @@
+body {
+    margin-top: 72px;
+    margin-bottom: 72px;
+    font-size: 12pt;
+    font-family: 'Inconsolata', monospace;
+}
+input, button { 
+    font-family: 'Inconsolata', monospace;
+    white-space: pre;
+    font-size: 12pt;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    margin: 8px 0;
+}
+
+button {
+    cursor: pointer;
+}
+
+input {
+    background-color: #fff;
+}
+
+.head {
+    background-color: #eee;
+    border-bottom: 1px solid #bbb;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 4px 0px;
+    box-shadow: rgba(0,0,0,0.2) 0px 1px 10px;
+}
+
+.foot {
+    background-color: #eee;
+    border-top: 1px solid #bbb;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 4px 16px;
+    box-shadow: rgba(0,0,0,0.2) 0px -1px 10px;
+/*     height: 48px; */
+/*     padding-top: 20px; */
+/*     padding-bottom: 16px; */
+}
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 25px;
+  top: -8px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .2s;
+  transition: .2s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 21px;
+  width: 21px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  -webkit-transition: .2s;
+  transition: .2s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 2px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(21px);
+  -ms-transform: translateX(21px);
+  transform: translateX(21px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 100px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+span.rule {
+    display: inline-block;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #fff;
+    width: 0px;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: -20px;
+    margin-bottom: -24px;
+    height: 60px;
+    position: relative;
+    top: 0px;
+}
+
+.green {
+    color: #4e9a06;
+}
+
+.red {
+    color: #cc0000;
+}
+
+.message {
+    font-family: 'Inconsolata', monospace;
+    white-space: pre-wrap;
+    font-size: 12pt;
+/*     background-color: #f0f0f0; */
+    border: 1px solid #ddd;
+    padding: 8px;
+    border-radius: 8px;
+/*     padding: 8px; */
+    margin: 8px 20px;
+    position: relative;
+}
+
+.server {
+    background-color: #4e9a06;
+    border: 1px solid #3a7304;
+    color: #fff;
+}
+
+.client {
+    background-color: #f8f8f8;
+    border: 1px solid #d0d0d0;
+    color: #000;
+}
+
+.note {
+    background-color: #fdf3a7;
+    border: 1px dotted #edd400;
+    color: #625000;
+}
+
+.error {
+    background-color: #f4951b;
+    border: 1px dotted #992413;
+    color: #a40000;
+}
+
+.client .tick {
+    width: 12px;
+    height: 16px;
+    position: absolute;
+    top: 10px;
+    left: -12px;
+    background-image: url('tick-client.png');
+}
+
+.server .tick {
+    width: 12px;
+    height: 16px;
+    position: absolute;
+    top: 9px;
+    right: -12px;
+    background-image: url('tick-server.png');
+}
+
+.timestamp {
+    float: right;
+    font-size: 80%;
+}
+
+@media print {
+    .head, .foot, .tick {
+        display: none;
+    }
+    .message {
+        background-color: #fff;
+        color: #000;
+        border: unset;
+        border-radius: 0;
+    }
+    .client {
+        border-left: 1px solid #888;
+        background-color: #eee;
+    }
+    .server {
+        border-right: 1px solid #888;
+        background-color: #eee;
+    }
+}
