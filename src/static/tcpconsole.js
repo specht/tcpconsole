@@ -125,6 +125,10 @@ function setup_ws(ws)
         {
             append_server(data.message);
         }
+        else if (typeof(data.note) !== 'undefined')
+        {
+            append_note(data.note);
+        }
     }
 }
 

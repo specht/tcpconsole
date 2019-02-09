@@ -1,6 +1,6 @@
 body {
     margin-top: 72px;
-    margin-bottom: 72px;
+    margin-bottom: 100px;
     font-size: 12pt;
     font-family: 'Inconsolata', monospace;
 }
@@ -30,7 +30,6 @@ input {
     top: 0;
     left: 0;
     right: 0;
-    width: 100%;
     padding: 4px 0px;
     box-shadow: rgba(0,0,0,0.2) 0px 1px 10px;
 }
@@ -41,12 +40,22 @@ input {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 100%;
-    padding: 4px 16px;
+    right: 0;
+    padding: 4px 16px 0 16px;
     box-shadow: rgba(0,0,0,0.2) 0px -1px 10px;
 /*     height: 48px; */
 /*     padding-top: 20px; */
 /*     padding-bottom: 16px; */
+}
+
+.foot .status {
+    border: 0;
+    border-top: 1px solid #bbb;
+    margin: 8px -16px 0px -16px;
+    text-align: center;
+    color: #666;
+    padding: 4px 0 4px 0;
+    background-color: #d8d8d8;
 }
 
 /* The switch - the box around the slider */
@@ -91,7 +100,7 @@ input {
 }
 
 input:checked + .slider {
-  background-color: #2196F3;
+  background-color: #729fcf;
 }
 
 input:focus + .slider {
@@ -194,6 +203,20 @@ span.rule {
     float: right;
     font-size: 80%;
 }
+
+#connect {
+    width: 120px;
+}
+
+a {
+    text-decoration: none;
+    color: #3465a4;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
 
 @media print {
     .head, .foot, .tick {

@@ -5,6 +5,8 @@ require 'socket'
 require 'openssl'
 require 'yaml'
 
+RATE_LIMIT = 100 # bytes per second, set to 0 to turn off
+
 class Main < Sinatra::Base
 #     use Rack::Auth::Basic, "Protected Area" do |username, password|
 #       username == 'foo' && password == 'bar'
@@ -23,6 +25,7 @@ class Main < Sinatra::Base
             end
 
             ws.on(:message) do |msg|
+#                 STDERR.puts request.to_yaml
                 client_id = request.env['HTTP_SEC_WEBSOCKET_KEY']
                 begin
                     request = {}
@@ -78,8 +81,21 @@ class Main < Sinatra::Base
                         end
                     elsif request['action'] == 'send'
                         if @@clients[client_id]
-                            @@clients[client_id].write(request['message'].strip)
-                            @@clients[client_id].write("\r\n")
+                            msg = request['message'].strip + "\r\n"
+                            if RATE_LIMIT == 0
+                                @@clients[client_id].write(msg)
+                            else
+                                t = Time.now.to_f
+                                bytes_sent = 0
+                                while !msg.empty?
+                                    while Time.now.to_f < t + bytes_sent.to_f / RATE_LIMIT
+                                        sleep 0.1
+                                    end
+                                    chunk = msg.slice!(0, RATE_LIMIT)
+                                    @@clients[client_id].write(chunk)
+                                    bytes_sent += chunk.size
+                                end
+                            end
                         end
                     elsif request['action'] == 'close'
                         begin
