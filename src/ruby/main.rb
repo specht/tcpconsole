@@ -5,7 +5,7 @@ require 'socket'
 require 'openssl'
 require 'yaml'
 
-RATE_LIMIT = 100 # bytes per second, set to 0 to turn off
+RATE_LIMIT = 1024 # bytes per second, set to 0 to turn off
 
 class Main < Sinatra::Base
 #     use Rack::Auth::Basic, "Protected Area" do |username, password|
@@ -20,7 +20,6 @@ class Main < Sinatra::Base
             
             ws.on(:open) do |event|
                 ws.send({:hello => 'world', :rate_limit => RATE_LIMIT}.to_json)
-                ws.send({:note => 'Howdy!'}.to_json)
             end
 
             ws.on(:close) do |event|

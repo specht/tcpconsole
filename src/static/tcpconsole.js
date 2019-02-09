@@ -2,28 +2,36 @@ var connected = null;
 var ws = null;
 var input = null;
 var message_queue = [];
+window.interval = null;
+window.message_to_append = null;
+window.message_to_append_index = 0;
+window.message_to_append_timestamp = 0.0;
 
 function teletype() {
-    $("html, body").stop().animate({ scrollTop: $(document).height() }, 0);
-    if (window.message_to_append.length > 0)
+    var messages = $('#messages');
+    var div = messages.children().last();
+    var t = Date.now() / 1000.0;
+    while ((window.message_to_append_index < window.message_to_append.length) && window.message_to_append_index < (t - window.message_to_append_timestamp) * window.rate_limit)
     {
-        var messages = $('#messages');
-        var div = messages.children().last();
-        var c = document.createTextNode(window.message_to_append.charAt(0));
+        var c = document.createTextNode(window.message_to_append.charAt(window.message_to_append_index));
         div.append(c);
-        window.message_to_append = window.message_to_append.substr(1, window.message_to_append.length - 1);
+        window.message_to_append_index += 1;
     }
-    else
+    if (window.message_to_append_index >= window.message_to_append.length)
     {
         clearInterval(window.interval);
+        window.interval = null;
+        window.message_to_append = null;
         if (message_queue.length > 0)
-            setTimeout(0, handle_message);
+            setTimeout(handle_message, 0);
     }
+    $("html, body").stop().animate({ scrollTop: $(document).height() }, 0);
 }
 
 function handle_message()
 {
-    if (message_queue.length === 0)
+    console.log('handle_message');
+    if (message_queue.length === 0 || window.interval !== null || window.message_to_append !== null)
         return;
     var message = message_queue[0];
     message_queue = message_queue.slice(1);
@@ -43,6 +51,10 @@ function handle_message()
     if (which === 'server' || which === 'client')
     {
         window.message_to_append = msg;
+        if (which === 'client')
+            window.message_to_append += "\n";
+        window.message_to_append_timestamp = Date.now() / 1000.0;
+        window.message_to_append_index = 0;
         var d = 1000 / window.rate_limit;
         if (d < 1)
             d = 1;
@@ -52,12 +64,11 @@ function handle_message()
     else
     {
         div.append(document.createTextNode(msg));
+        div.append("<br />");
         if (message_queue.length > 0)
-            setTimeout(0, handle_message);
+            setTimeout(handle_message, 0);
     }
     
-    if (which !== 'server')
-        div.append("<br />");
     $("html, body").stop().animate({ scrollTop: $(document).height() }, 400);
 }
 
@@ -68,7 +79,8 @@ function append(which, msg)
                     ('0' + d.getMinutes()).slice(-2) + ':' +
                     ('0' + d.getSeconds()).slice(-2);
     message_queue.push({which: which, timestamp: timestamp, msg: msg});
-    setTimeout(handle_message, 0);
+    if (message_queue.length === 1)
+        setTimeout(handle_message, 0);
 }
 
 function append_client(msg)
