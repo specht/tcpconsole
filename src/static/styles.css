@@ -52,9 +52,9 @@ input {
     border: 0;
     border-top: 1px solid #bbb;
     margin: 8px -16px 0px -16px;
-    text-align: center;
+/*     text-align: center; */
     color: #666;
-    padding: 4px 0 4px 0;
+    padding: 4px 8px;
     background-color: #d8d8d8;
 }
 

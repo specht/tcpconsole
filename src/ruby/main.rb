@@ -5,7 +5,7 @@ require 'socket'
 require 'openssl'
 require 'yaml'
 
-RATE_LIMIT = 100 # bytes per second, set to 0 to turn off
+RATE_LIMIT = 10 # bytes per second, set to 0 to turn off
 
 class Main < Sinatra::Base
 #     use Rack::Auth::Basic, "Protected Area" do |username, password|
@@ -19,6 +19,8 @@ class Main < Sinatra::Base
             ws = Faye::WebSocket.new(request.env)
             
             ws.on(:open) do |event|
+                ws.send({:hello => 'world', :rate_limit => RATE_LIMIT}.to_json)
+                ws.send({:note => 'Howdy!'}.to_json)
             end
 
             ws.on(:close) do |event|
@@ -56,10 +58,20 @@ class Main < Sinatra::Base
                                 while true do
                                     break if @@clients[client_id].closed? || @@clients[client_id].eof?
                                     s = IO.select([@@clients[client_id]])
+                                    t = Time.now.to_f
+                                    bytes_read = 0
                                     while true do
                                         buffer = nil
                                         begin
-                                            buffer = @@clients[client_id].read_nonblock(4096)
+                                            if RATE_LIMIT == 0
+                                                buffer = @@clients[client_id].read_nonblock(4096)
+                                            else
+                                                while Time.now.to_f < t + bytes_read.to_f / RATE_LIMIT
+                                                    sleep 0.1
+                                                end
+                                                buffer = @@clients[client_id].read_nonblock(RATE_LIMIT)
+                                                bytes_read += buffer.size
+                                            end
                                             buffer.force_encoding(Encoding::UTF_8)
                                             buffer.encode!(Encoding::UTF_16LE, invalid: :replace, replace: "\uFFFD")
                                             buffer.encode!(Encoding::UTF_8)

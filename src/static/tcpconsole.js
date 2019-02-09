@@ -3,18 +3,21 @@ var ws = null;
 var input = null;
 var message_queue = [];
 
-function append(which, msg)
+function handle_message()
 {
+    if (message_queue.length === 0)
+        return;
+    var message = message_queue[0];
+    message_queue = message_queue.slice(1);
+    which = message.which;
+    msg = message.msg;
+    timestamp = message.timestamp;
     var messages = $('#messages');
     var div = messages.children().last();
     if ((which === 'note') || (which === 'error') || (!div.hasClass(which)))
     {
         div = $('<div>').addClass('message ' + which);
         messages.append(div);
-        d = new Date();
-        timestamp = ('0' + d.getHours()).slice(-2) + ':' +
-                    ('0' + d.getMinutes()).slice(-2) + ':' +
-                    ('0' + d.getSeconds()).slice(-2);
         $('<div>').addClass('timestamp').html(timestamp).appendTo(div);
         if (which === 'server' || which == 'client')
             $('<div>').addClass('tick').appendTo(div);
@@ -44,14 +47,15 @@ function append(which, msg)
     $("html, body").stop().animate({ scrollTop: $(document).height() }, 400);
 }
 
-// function append(which, msg)
-// {
-//     var d = new Date();
-//     var timestamp = ('0' + d.getHours()).slice(-2) + ':' +
-//                     ('0' + d.getMinutes()).slice(-2) + ':' +
-//                     ('0' + d.getSeconds()).slice(-2);
-//     message_queue.push({which: which, timestamp: timestamp, msg: msg});
-// }
+function append(which, msg)
+{
+    var d = new Date();
+    var timestamp = ('0' + d.getHours()).slice(-2) + ':' +
+                    ('0' + d.getMinutes()).slice(-2) + ':' +
+                    ('0' + d.getSeconds()).slice(-2);
+    message_queue.push({which: which, timestamp: timestamp, msg: msg});
+    setTimeout(handle_message, 0);
+}
 
 function append_client(msg)
 {
@@ -93,7 +97,11 @@ function setup_ws(ws)
     ws.onmessage = function (msg) {
         data = JSON.parse(msg.data);
         console.log(data);
-        if (data.connected === true)
+        if (data.hello === 'world')
+        {
+            $('#rate_limit').html('' + data.rate_limit);
+        }
+        else if (data.connected === true)
         {
             $('#connect').html('Disconnect');
             $('#host').prop('disabled', true);
