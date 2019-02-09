@@ -3,6 +3,24 @@ var ws = null;
 var input = null;
 var message_queue = [];
 
+function teletype() {
+    $("html, body").stop().animate({ scrollTop: $(document).height() }, 0);
+    if (window.message_to_append.length > 0)
+    {
+        var messages = $('#messages');
+        var div = messages.children().last();
+        var c = document.createTextNode(window.message_to_append.charAt(0));
+        div.append(c);
+        window.message_to_append = window.message_to_append.substr(1, window.message_to_append.length - 1);
+    }
+    else
+    {
+        clearInterval(window.interval);
+        if (message_queue.length > 0)
+            setTimeout(0, handle_message);
+    }
+}
+
 function handle_message()
 {
     if (message_queue.length === 0)
@@ -22,24 +40,20 @@ function handle_message()
         if (which === 'server' || which == 'client')
             $('<div>').addClass('tick').appendTo(div);
     }
-//     if (which === 'server')
-//     {
-//         function timer() {
-//             $("html, body").stop().animate({ scrollTop: $(document).height() }, 0);
-//             if (window.message_to_append.length > 0)
-//             {
-//                 div.append(document.createTextNode(window.message_to_append.charAt(0)));
-//                 window.message_to_append = window.message_to_append.substr(1, window.message_to_append.length - 1);
-//             }
-//             else
-//                 clearInterval(window.interval);
-//         }
-//         window.message_to_append = msg;
-//         window.interval = setInterval(timer, 10);
-//     }
-//     else
+    if (which === 'server' || which === 'client')
+    {
+        window.message_to_append = msg;
+        var d = 1000 / window.rate_limit;
+        if (d < 1)
+            d = 1;
+        console.log(d);
+        window.interval = setInterval(teletype, d);
+    }
+    else
     {
         div.append(document.createTextNode(msg));
+        if (message_queue.length > 0)
+            setTimeout(0, handle_message);
     }
     
     if (which !== 'server')
@@ -99,6 +113,7 @@ function setup_ws(ws)
         console.log(data);
         if (data.hello === 'world')
         {
+            window.rate_limit = data.rate_limit;
             $('#rate_limit').html('' + data.rate_limit);
         }
         else if (data.connected === true)

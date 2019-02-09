@@ -5,7 +5,7 @@ require 'socket'
 require 'openssl'
 require 'yaml'
 
-RATE_LIMIT = 10 # bytes per second, set to 0 to turn off
+RATE_LIMIT = 100 # bytes per second, set to 0 to turn off
 
 class Main < Sinatra::Base
 #     use Rack::Auth::Basic, "Protected Area" do |username, password|
